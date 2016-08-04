@@ -22,15 +22,18 @@ BASEY        = SCREENHEIGHT * 0.79
 IMAGES, SOUNDS, HITMASKS = {}, {}, {}
 
 # init for AI model
-flapinfo = []
-noflapinfo = []
+global flapmodel
+global counter
+global MAX_PLAYS
+global AImode
+global Trainingmode
+counter = 0
+MAX_PLAYS = 20
 flapmodel = model.Model(12)
 flapmodel.load()
 AImode = True
-Trainingmode = True
+Trainingmode = False
 last_flap_time = time.time()
-counter = 0
-MAX_PLAYS = 1000
 
 # list of all possible players (tuple of 3 positions of flap)
 PLAYERS_LIST = (
@@ -173,7 +176,7 @@ def showWelcomeAnimation():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 pygame.quit()
                 sys.exit()
-            if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP):
+            if (event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP)):
                 # make first flap sound and return values for mainGame
                 SOUNDS['wing'].play()
                 return {
@@ -181,6 +184,16 @@ def showWelcomeAnimation():
                     'basex': basex,
                     'playerIndexGen': playerIndexGen,
                 }
+
+        # If in training mode, start immediately
+        if (Trainingmode == True):
+            # make first flap sound and return values for mainGame
+            SOUNDS['wing'].play()
+            return {
+                'playery': playery + playerShmVals['val'],
+                'basex': basex,
+                'playerIndexGen': playerIndexGen,
+            }
 
         # adjust playery, playerIndex, basex
         if (loopIter + 1) % 5 == 0:
@@ -235,6 +248,8 @@ def mainGame(movementInfo):
     playerFlapped = False # True when player flaps
 
     # initialize flap info and noflap info
+    flapinfo = []
+    noflapinfo = []
     flaphead = {
                 'y': playery,
                 'basex': basex,
@@ -278,9 +293,7 @@ def mainGame(movementInfo):
         crashTest = checkCrash({'x': playerx, 'y': playery, 'index': playerIndex},
                                upperPipes, lowerPipes)
         if crashTest[0]:
-            # tell model we crashed
-            #model.score(-10)
-            if AImode == False:
+            if AImode == False and Trainingmode == True:
                 if len(flapinfo) > 0:
                     with open('crashlabels.csv', 'ab') as f:
                         w = csv.writer(f)
@@ -306,7 +319,7 @@ def mainGame(movementInfo):
                 score += 1
                 SOUNDS['point'].play()
                 # update score for model
-                if AImode == False: 
+                if AImode == False and Trainingmode == True: 
                     with open('flaplabels.csv', 'ab') as f:
                         w = csv.writer(f)
                         for info in flapinfo:
@@ -328,7 +341,7 @@ def mainGame(movementInfo):
  
         if playerFlapped:
             playerFlapped = False
-            #if AImode == False:
+            #if AImode == False and Trainingmode == True:
                # with open('noflaplabels.csv', 'ab') as f:
                #     w = csv.writer(f)
                #     for info in noflapinfo:
@@ -337,7 +350,8 @@ def mainGame(movementInfo):
                #     f.close()
  
         playerHeight = IMAGES['player'][playerIndex].get_height()
-        playery += min(playerVelY, BASEY - playery - playerHeight)
+        if playery < SCREENHEIGHT:
+            playery += min(playerVelY, BASEY - playery - playerHeight)
 
         # move pipes to left
         for uPipe, lPipe in zip(upperPipes, lowerPipes):
@@ -373,6 +387,8 @@ def mainGame(movementInfo):
 
 def showGameOverScreen(crashInfo):
     """crashes the player down ans shows gameover image"""
+    global flapmodel
+    global counter
     score = crashInfo['score']
     playerx = SCREENWIDTH * 0.2
     playery = crashInfo['y']
@@ -390,10 +406,15 @@ def showGameOverScreen(crashInfo):
         SOUNDS['die'].play()
 
     # train model based on new data and save
-    val_score = flapmodel.train()
-    if val_score > flapmodel.val_score:
-        flapmodel.save()
-        flapmodel.val_score = val_score
+    if counter % 5 == 1 and counter < MAX_PLAYS:
+        val_score = flapmodel.train()
+        if val_score > flapmodel.val_score:
+            pdb.set_trace()
+            flapmodel.save()
+            flapmodel.val_score = val_score
+    counter += 1
+    if Trainingmode == True:
+        return
 
     while True:
         for event in pygame.event.get():

@@ -22,6 +22,8 @@ class Model(object):
             Dense(4, activation='relu'),
             Dropout(0.5),
             Dense(1, activation='sigmoid')])
+        self.n = 0
+        self.val_score = 0.6
         return
 
     def save(self):
@@ -61,6 +63,13 @@ class Model(object):
                 if len(row) < 16:
                     self.flaps.append([float(row_i) for row_i in row])
         self.flaps = np.asarray(self.flaps)
+        # If we didn't get more examples, we don't need to train
+        #pdb.set_trace()
+        if self.flaps.shape[0] > self.n:
+            self.n = self.flaps.shape[0]
+        else:
+            return 0
+
         with open('noflaplabels.csv', 'rb') as f:
             reader = csv.reader(f, delimiter=',')
             for row in reader:
@@ -73,7 +82,7 @@ class Model(object):
                 if len(row) < 16 and len(self.crashflaps) < len(self.flaps):
                     self.crashflaps.append([float(row_i) for row_i in row])
         self.crashflaps = np.asarray(self.crashflaps)
-        pdb.set_trace()
+        #pdb.set_trace()
         
         # consolidate data
         n = self.flaps.shape[0] + self.noflaps.shape[0] + self.crashflaps.shape[0]
