@@ -268,9 +268,11 @@ def mainGame(movementInfo):
                 basex,
                 score,
                 playerVelY])
-        if AImode == True and len(catlist) == 12:
-            print flapmodel.infer(np.expand_dims(catlist, 0))[0][0]
-            if (flapmodel.infer(np.expand_dims(catlist, 0))[0][0] > 0.5):
+        if len(catlist) > 12:
+            catlist = np.asarray(catlist)[[1, 2, 4, 5, 7, 8, 10, 11, 12, 13, 14, 15]]
+        if AImode == True and playery > catlist[6] - 40:
+            decision = flapmodel.infer(np.expand_dims(catlist, 0))[0][0]
+            if (decision > 0.5):
                #or playerVelY > 7 or playery < -40:
                 playerVelY = playerFlapAcc
                 playerFlapped = True
@@ -293,7 +295,8 @@ def mainGame(movementInfo):
         crashTest = checkCrash({'x': playerx, 'y': playery, 'index': playerIndex},
                                upperPipes, lowerPipes)
         if crashTest[0]:
-            if AImode == False and Trainingmode == True:
+            #pdb.set_trace()
+            if AImode == False or Trainingmode == True:
                 if len(flapinfo) > 0:
                     with open('crashlabels.csv', 'ab') as f:
                         w = csv.writer(f)
@@ -319,7 +322,7 @@ def mainGame(movementInfo):
                 score += 1
                 SOUNDS['point'].play()
                 # update score for model
-                if AImode == False and Trainingmode == True: 
+                if AImode == False or Trainingmode == True: 
                     with open('flaplabels.csv', 'ab') as f:
                         w = csv.writer(f)
                         for info in flapinfo:
@@ -341,7 +344,7 @@ def mainGame(movementInfo):
  
         if playerFlapped:
             playerFlapped = False
-            #if AImode == False and Trainingmode == True:
+            #if AImode == False or Trainingmode == True:
                # with open('noflaplabels.csv', 'ab') as f:
                #     w = csv.writer(f)
                #     for info in noflapinfo:
@@ -406,14 +409,14 @@ def showGameOverScreen(crashInfo):
         SOUNDS['die'].play()
 
     # train model based on new data and save
-    if counter % 5 == 1 and counter < MAX_PLAYS:
-        val_score = flapmodel.train()
-        if val_score > flapmodel.val_score:
-            pdb.set_trace()
-            flapmodel.save()
-            flapmodel.val_score = val_score
-    counter += 1
     if Trainingmode == True:
+        if counter % 5 == 1 and counter < MAX_PLAYS:
+            val_score = flapmodel.train()
+            if val_score > flapmodel.val_score:
+                pdb.set_trace()
+                flapmodel.save()
+                flapmodel.val_score = val_score
+        counter += 1
         return
 
     while True:

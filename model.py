@@ -57,32 +57,43 @@ class Model(object):
         self.flaps = []
         self.noflaps = []
         self.crashflaps = []
+        short_idx = [1, 2, 4, 5, 7, 8, 10, 11, 12, 13, 14, 15]
         with open('flaplabels.csv', 'rb') as f:
             reader = csv.reader(f, delimiter=',')
             for row in reader:
                 if len(row) < 16:
                     self.flaps.append([float(row_i) for row_i in row])
+                else:
+                    rowarr = np.asarray(row).astype(float)
+                    self.flaps.append(list(rowarr[short_idx]))
         self.flaps = np.asarray(self.flaps)
         # If we didn't get more examples, we don't need to train
-        #pdb.set_trace()
         if self.flaps.shape[0] > self.n:
             self.n = self.flaps.shape[0]
         else:
             return 0
 
-        with open('noflaplabels.csv', 'rb') as f:
-            reader = csv.reader(f, delimiter=',')
-            for row in reader:
-                if len(row) < 16 and len(self.noflaps) < len(self.flaps):
-                    self.noflaps.append([float(row_i) for row_i in row])
-        self.noflaps = np.asarray(self.noflaps)
         with open('crashlabels.csv', 'rb') as f:
             reader = csv.reader(f, delimiter=',')
             for row in reader:
-                if len(row) < 16 and len(self.crashflaps) < len(self.flaps):
-                    self.crashflaps.append([float(row_i) for row_i in row])
+                if len(self.noflaps) < len(self.flaps):
+                    if len(row) < 16:
+                        self.crashflaps.append([float(row_i) for row_i in row])
+                    else:
+                        rowarr = np.asarray(row).astype(float)
+                        self.crashflaps.append(list(rowarr[short_idx]))
         self.crashflaps = np.asarray(self.crashflaps)
-        #pdb.set_trace()
+
+        with open('noflaplabels.csv', 'rb') as f:
+            reader = csv.reader(f, delimiter=',')
+            for row in reader:
+                if len(self.noflaps) < len(self.flaps):
+                    if len(row) < 16:
+                        self.noflaps.append([float(row_i) for row_i in row]) 
+                    else:
+                        rowarr = np.asarray(row).astype(float)
+                        self.noflaps.append(list(rowarr[short_idx]))
+        self.noflaps = np.asarray(self.noflaps)
         
         # consolidate data
         n = self.flaps.shape[0] + self.noflaps.shape[0] + self.crashflaps.shape[0]
