@@ -5,23 +5,20 @@ import numpy as np
 import yaml
 import pdb
 import csv
-#import dtree
-
-#config = NamedTuple(
 
 class Model(object):
     def __init__(self, input_dims):
         self.modfile = 'nnmodel'
         self.weightfile = 'weight'
         self.input_dims = input_dims
-        self.model = keras.models.Sequential([
-            Dense(input_dims, input_dim=self.input_dims, activation='relu', init='uniform'),
-            Dropout(0.5),
-            Dense(8, activation='relu'),
-            Dropout(0.5),
-            Dense(4, activation='relu'),
-            Dropout(0.5),
-            Dense(1, activation='sigmoid')])
+        #self.model = keras.models.Sequential([
+        #    Dense(input_dims, input_dim=self.input_dims, activation='relu', init='uniform'),
+        #    Dropout(0.5),
+        #    Dense(8, activation='relu'),
+        #    Dropout(0.5),
+        #    Dense(4, activation='relu'),
+        #    Dropout(0.5),
+        #    Dense(1, activation='sigmoid')])
         self.n = 0
         self.val_score = 0.6
         return
@@ -120,7 +117,7 @@ class Model(object):
                 metrics=['accuracy'])
         self.model.fit(
                 self.trainx, self.trainy,
-                nb_epoch=10,
+                nb_epoch=1,
                 batch_size=64)
         val_score = self.model.evaluate(
                 self.valx, self.valy,
